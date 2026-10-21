@@ -1,0 +1,43 @@
+entity Ejemplar {
+    codigo key
+    nombre
+    fecha_llegada
+}
+
+entity Especie {
+    id key
+    nombre_cientifico
+    origen
+}
+
+entity Recinto {
+    numero key
+    superficie
+}
+
+entity Cuidador {
+    rut key
+    nombre
+}
+
+entity Dieta {
+    id key
+    tipo
+    frecuencia
+}
+
+entity Visita {
+    id key
+    fecha
+    cupos
+}
+
+relation Clasifica(Ejemplar 1!, Especie)
+
+relation Habita(Ejemplar 1, Recinto)
+
+relation Cuida(Cuidador, Recinto)
+
+relation Sigue(Ejemplar, Dieta)
+
+relation Recorre(Visita, Recinto)

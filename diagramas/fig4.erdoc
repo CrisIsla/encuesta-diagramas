@@ -1,0 +1,28 @@
+entity Cliente {
+    id key
+    nombre
+    apellido
+    edad
+    direccion
+
+}
+
+entity Paquete{
+    id key
+    contenido
+}
+
+entity Repartidor {
+    id key
+    nombre
+}
+
+relation Entrega(Repartidor 1, Paquete)
+
+aggregation Pedido_agg(Entrega)
+
+relation Realiza(Cliente 1, Pedido_agg)
+
+entity Cliente_frecuente extends Cliente{
+    numero_de_compras
+}

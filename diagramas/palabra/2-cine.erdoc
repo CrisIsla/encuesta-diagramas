@@ -1,0 +1,43 @@
+entity Sala {
+    numero key
+    capacidad
+}
+
+entity Función {
+    codigo key
+    fecha
+    hora
+}
+
+entity Butaca {
+    codigo key
+    fila
+}
+
+entity Entrada {
+    folio key
+    precio
+}
+
+entity Título {
+    id key
+    nombre
+    duracion
+}
+
+entity Actor {
+    rut key
+    nombre
+}
+
+relation Se_realiza(Función 1!, Sala)
+
+relation Proyecta(Función 1!, Título)
+
+relation Actúa(Actor, Título)
+
+relation Para(Entrada 1!, Función)
+
+relation Asigna(Entrada 1, Butaca)
+
+relation Ubicada(Butaca 1!, Sala)

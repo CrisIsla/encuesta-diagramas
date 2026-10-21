@@ -1,0 +1,50 @@
+entity Employee {
+    e_id key
+    name
+}
+ 
+entity Department {
+    d_number key
+    d_name
+}
+ 
+relation Manages(Department: [Management, Research 1!])
+ 
+ 
+relation Works_for(Employee N, Department 1!)
+ 
+entity Project {
+    p_id key
+    p_name
+}
+ 
+relation Controls(Department, Project 1!)
+ 
+relation Works_on(Employee M, Project N) {
+    hours
+}
+ 
+entity Part {
+    p_number key
+    p_name
+}
+ 
+entity Screw extends Part {
+    head_style
+}
+ 
+entity Supplier {
+    s_id key
+    s_name
+}
+ 
+relation Supplies(Project M, Part N!, Supplier P!) {
+    Quantity
+}
+ 
+entity Dependent depends on Dependent_of {
+    Dep_name pkey
+    Gender
+}
+ 
+relation Dependent_of(Employee, Dependent 1!)

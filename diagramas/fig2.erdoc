@@ -1,0 +1,7 @@
+entity Empleado {
+    id key
+    nombre
+    edad
+}
+
+relation Maneja(Empleado: [Practicante 1, Supervisor])

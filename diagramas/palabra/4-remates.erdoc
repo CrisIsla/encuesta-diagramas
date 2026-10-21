@@ -1,0 +1,46 @@
+entity Pieza {
+    codigo key
+    descripcion
+    año
+}
+
+entity Sala {
+    numero key
+    piso
+}
+
+entity Colección {
+    id key
+    nombre
+}
+
+entity Experto {
+    rut key
+    nombre
+    area
+}
+
+entity Catálogo {
+    numero key
+    fecha
+}
+
+entity Persona {
+    rut key
+    nombre
+    telefono
+}
+
+relation Pertenece(Pieza 1, Colección)
+
+relation Exhibe(Sala, Pieza)
+
+relation Evalúa(Experto, Pieza) {
+    valor
+}
+
+relation Incluye(Catálogo, Pieza)
+
+relation Puja(Persona, Pieza) {
+    monto
+}

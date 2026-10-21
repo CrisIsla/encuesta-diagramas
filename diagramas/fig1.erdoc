@@ -1,0 +1,15 @@
+entity Cliente {
+    id key
+    nombre
+    apellido
+    edad
+    direccion
+
+}
+
+entity Pedido {
+    id key
+    contenido
+}
+
+relation Realiza(Cliente 1, Pedido)

@@ -1,0 +1,44 @@
+entity Lector {
+    rut key
+    nombre
+    telefono
+}
+
+entity Libro {
+    codigo key
+    titulo
+    año
+}
+
+entity Copia {
+    numero key
+    estado
+}
+
+entity Autor {
+    id key
+    nombre
+}
+
+entity Estante {
+    codigo key
+    piso
+}
+
+entity Editorial {
+    id key
+    nombre
+    pais
+}
+
+relation Escribe(Autor, Libro)
+
+relation Publica(Editorial, Libro 1)
+
+relation Tiene(Libro, Copia 1!)
+
+relation Ubicada(Copia 1, Estante)
+
+relation Pide_prestado(Lector, Copia) {
+    fecha_devolucion
+}

@@ -1,0 +1,46 @@
+entity Paciente {
+    id key
+    nombre
+    edad
+}
+
+entity Dueño {
+    rut key
+    nombre
+    telefono
+}
+
+entity Especialista {
+    rut key
+    nombre
+    area
+}
+
+entity Box {
+    numero key
+    piso
+}
+
+entity Ficha {
+    numero key
+    fecha_apertura
+}
+
+entity Vacuna {
+    codigo key
+    nombre
+}
+
+relation Pertenece(Paciente 1!, Dueño)
+
+relation Atiende(Especialista, Paciente) {
+    fecha
+}
+
+relation Asignado(Especialista, Box)
+
+relation Tiene(Paciente, Ficha 1!)
+
+relation Recibe(Paciente, Vacuna) {
+    fecha_dosis
+}

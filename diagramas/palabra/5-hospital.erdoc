@@ -1,0 +1,46 @@
+entity Persona {
+    rut key
+    nombre
+    telefono
+}
+
+entity Habitación {
+    numero key
+    tipo
+}
+
+entity Piso {
+    numero key
+    ala
+}
+
+entity Cama {
+    codigo key
+    estado
+}
+
+entity Personal {
+    rut key
+    nombre
+    cargo
+}
+
+entity Turno {
+    id key
+    inicio
+    fin
+}
+
+relation Ingresa(Persona, Cama) {
+    fecha
+}
+
+relation Ubicada(Habitación 1!, Piso)
+
+relation Contiene(Cama 1!, Habitación)
+
+relation Cumple(Personal, Turno)
+
+relation Da_de_alta(Personal, Persona) {
+    fecha_alta
+}

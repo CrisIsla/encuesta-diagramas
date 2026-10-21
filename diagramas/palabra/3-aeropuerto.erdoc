@@ -1,0 +1,42 @@
+entity Viajero {
+    rut key
+    nombre
+}
+
+entity Equipaje {
+    etiqueta key
+    peso
+}
+
+entity Mostrador {
+    numero key
+    zona
+}
+
+entity Puerta {
+    codigo key
+    sector
+}
+
+entity Salida {
+    codigo key
+    fecha
+    hora
+}
+
+entity Pista {
+    numero key
+    largo
+}
+
+relation Reserva(Viajero, Salida) {
+    asiento
+}
+
+relation Lleva(Viajero, Equipaje 1!)
+
+relation Atiende(Mostrador, Salida)
+
+relation Embarca(Salida 1!, Puerta)
+
+relation Despega(Salida 1, Pista)

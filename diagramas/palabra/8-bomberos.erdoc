@@ -1,0 +1,46 @@
+entity Compañía {
+    numero key
+    nombre
+    fundacion
+}
+
+entity Carro {
+    patente key
+    tipo
+    año
+}
+
+entity Voluntario {
+    rut key
+    nombre
+    rango
+}
+
+entity Cuartel {
+    id key
+    direccion
+}
+
+entity Emergencia {
+    folio key
+    fecha
+    clase
+}
+
+entity Guardia {
+    id key
+    inicio
+    fin
+}
+
+relation Integra(Voluntario 1!, Compañía)
+
+relation Asignado(Carro 1!, Compañía)
+
+relation Ocupa(Compañía 1, Cuartel)
+
+relation Acude(Carro, Emergencia) {
+    hora_salida
+}
+
+relation Hace(Voluntario, Guardia)

@@ -1,0 +1,4 @@
+# the answers received and the admin key: never in the repo
+datos/
+*.tmp
+.DS_Store
