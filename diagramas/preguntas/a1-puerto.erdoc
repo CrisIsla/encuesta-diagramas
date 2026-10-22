@@ -1,0 +1,45 @@
+entity Buque {
+    imo key
+    capacidad
+    año_construccion
+}
+
+entity Contenedor {
+    sigla key
+    peso
+    tamaño
+}
+
+entity Bloque {
+    codigo key
+    zona
+    altura_maxima
+}
+
+entity Operador {
+    rut key
+    turno
+    fecha_ingreso
+}
+
+entity Equipo {
+    numero_serie key
+    fecha_alta
+    costo_hora
+}
+
+entity Grúa_pórtico extends Equipo {}
+
+entity Apiladora extends Equipo {}
+
+entity Tractor_patio extends Equipo {}
+
+relation Transporta(Buque, Contenedor)
+
+relation Atiende(Grúa_pórtico, Buque, Operador)
+
+relation Mueve(Tractor_patio, Contenedor)
+
+relation Ubicado(Contenedor 1, Bloque)
+
+relation Asignada(Apiladora 1, Bloque)

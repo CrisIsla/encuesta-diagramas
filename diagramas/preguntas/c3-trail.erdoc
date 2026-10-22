@@ -1,0 +1,57 @@
+entity Corredor {
+    rut key
+    nombre
+    fecha_nacimiento
+}
+
+entity Evento {
+    codigo key
+    fecha
+    modalidad
+}
+
+entity Distancia {
+    id_distancia key
+    kilometros
+    desnivel
+}
+
+entity Puesto_control {
+    numero key
+    altitud
+}
+
+entity Voluntario {
+    run key
+    telefono
+}
+
+entity Club {
+    id key
+    fecha_alta
+}
+
+relation Inscribe(Corredor, Distancia) {
+    dorsal
+    estado
+}
+
+aggregation Participación(Inscribe)
+
+relation Registra(Puesto_control, Participación) {
+    hora_paso
+}
+
+relation Ofrece(Evento, Distancia 1!)
+
+relation Sigue(Puesto_control: [Anterior 1, Siguiente 1]) {
+    tramo_km
+}
+
+relation Atiende(Voluntario, Puesto_control) {
+    turno
+}
+
+relation Organiza(Club, Evento)
+
+relation Pertenece(Corredor 1, Club)

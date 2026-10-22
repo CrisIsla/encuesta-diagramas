@@ -1,0 +1,47 @@
+entity Cliente {
+    rut key
+    region
+    convenio
+}
+
+entity Envío {
+    guia key
+    tarifa
+    destino
+}
+
+entity Pallet extends Envío {}
+
+entity Bulto extends Envío {}
+
+entity Sobre extends Envío {}
+
+entity Vuelo {
+    numero key
+    fecha_salida
+    duracion
+}
+
+entity Avión {
+    matricula key
+    carga_util
+    certificado
+}
+
+entity Aeródromo {
+    oaci key
+    ciudad
+    altitud
+}
+
+relation Despacha(Cliente, Envío 1!)
+
+relation Embarca(Pallet, Vuelo)
+
+relation Agrupa(Pallet, Bulto 1)
+
+relation Opera(Avión, Vuelo 1!)
+
+relation Base(Avión 1, Aeródromo)
+
+relation Retira(Cliente, Sobre 1, Aeródromo)

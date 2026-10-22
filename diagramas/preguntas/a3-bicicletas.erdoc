@@ -1,0 +1,59 @@
+entity Instalación {
+    codigo key
+    comuna
+    horario
+}
+
+entity Estación extends Instalación {
+    anclajes
+}
+
+entity Taller extends Instalación {
+    puestos
+}
+
+entity Bodega extends Instalación {
+    superficie
+}
+
+entity Bicicleta {
+    serie key
+    fecha_compra
+    kilometraje
+}
+
+entity Usuario {
+    rut key
+    plan
+    fecha_inscripcion
+}
+
+entity Camioneta {
+    patente key
+    cupos
+    seguro
+}
+
+entity Técnico {
+    ficha key
+    especialidad
+    telefono
+}
+
+relation Arriendo(Usuario, Bicicleta) {
+    inicio
+}
+
+relation Mantiene(Taller, Bicicleta) {
+    diagnostico
+}
+
+relation Anclada(Bicicleta 1, Estación)
+
+relation Visita(Camioneta, Técnico, Estación) {
+    motivo
+}
+
+relation Asignado(Técnico 1, Taller)
+
+relation Guarda(Camioneta 1, Bodega)

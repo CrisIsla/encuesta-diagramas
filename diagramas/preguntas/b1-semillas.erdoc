@@ -1,0 +1,55 @@
+entity Especie {
+    código key
+    nombre_científico
+    categoría
+}
+
+entity Lote {
+    número key
+    fecha_alta
+    n_semillas
+    estado
+}
+
+entity Cámara {
+    sigla key
+    temperatura
+    humedad
+}
+
+entity Recolector {
+    rut key
+    nombre
+}
+
+entity Sitio {
+    localidad key
+    región
+}
+
+entity Ensayo depends on Evalúa {
+    correlativo pkey
+    germinación
+    duración
+}
+
+entity Analista {
+    ficha key
+    nivel
+}
+
+relation Visita(Recolector, Sitio) {
+    temporada
+}
+
+aggregation Procedencia(Visita)
+
+relation Aporta(Procedencia, Lote 1!)
+
+relation Pertenece(Lote 1!, Especie)
+
+relation Almacena(Cámara, Lote 1!)
+
+relation Evalúa(Lote, Ensayo 1!)
+
+relation Realiza(Analista, Ensayo 1!)

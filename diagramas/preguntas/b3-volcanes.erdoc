@@ -1,0 +1,51 @@
+entity Cerro {
+    nombre key
+    altitud
+    tipo
+    última_erupción
+}
+
+entity Estación {
+    sigla key
+    fecha_alta
+}
+
+entity Sensor {
+    serie key
+    modelo
+    estado
+}
+
+entity Mantención depends on Recibe {
+    número pkey
+    fecha
+    observación
+}
+
+entity Técnico {
+    rut key
+    especialidad
+}
+
+entity Alerta {
+    folio key
+    color
+    inicio
+}
+
+entity Comuna {
+    código key
+    población
+}
+
+relation Vigila(Estación 1!, Cerro)
+
+relation Instala(Estación, Sensor 1)
+
+relation Recibe(Estación, Mantención 1!)
+
+relation Ejecuta(Técnico, Mantención)
+
+relation Declara(Cerro, Alerta 1!)
+
+relation Afecta(Alerta, Comuna)

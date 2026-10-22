@@ -1,0 +1,28 @@
+entity Huésped {
+    documento key
+    nombre
+    pais
+}
+
+entity Habitación {
+    numero key
+    capacidad
+    tarifa
+}
+
+entity Mucama {
+    run key
+    jornada
+}
+
+entity Piso {
+    numero_piso key
+}
+
+relation Ocupa(Huésped, Habitación) {
+    comentario
+}
+
+relation Limpia(Mucama, Habitación)
+
+relation Contiene(Piso, Habitación 1!)

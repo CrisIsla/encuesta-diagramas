@@ -1,0 +1,54 @@
+entity Músico {
+    rut key
+    nombre
+    fecha_alta
+}
+
+entity Instrumento {
+    numero_serie key
+    familia
+    origen
+}
+
+entity Concierto {
+    folio key
+    fecha
+}
+
+entity Sala {
+    codigo key
+    aforo
+}
+
+entity Obra {
+    catalogo key
+    titulo
+    compositor
+}
+
+entity Director {
+    id key
+    nacionalidad
+}
+
+relation Comparte_atril(Músico: [Guía 1, Aprendiz 1])
+
+relation Practica_con(Músico: [Tutor, Pupilo 1]) {
+    desde
+}
+
+relation Préstamo(Músico 1, Instrumento 1) {
+    estado
+}
+
+relation Toca_en(Músico, Concierto) {
+    observacion
+}
+
+relation Incluye(Concierto, Obra) {
+    orden
+}
+
+relation Dirige(Director, Concierto 1!)
+
+relation Se_realiza(Concierto 1!, Sala)

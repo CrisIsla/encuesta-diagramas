@@ -1,0 +1,52 @@
+entity Investigador {
+    rut key
+    nombre
+    fecha_alta
+}
+
+entity Proyecto {
+    código key
+    título
+    categoría
+}
+
+entity Antena {
+    sigla key
+    apertura
+    estado
+}
+
+entity Instrumento {
+    serie key
+    tipo
+}
+
+entity Fuente {
+    catálogo key
+    magnitud
+    constelación
+}
+
+entity Imagen depends on Captura {
+    correlativo pkey
+    filtro
+    exposición
+}
+
+relation Participa(Investigador, Proyecto) {
+    función
+}
+
+aggregation Equipo(Participa)
+
+relation Reserva(Equipo, Antena) {
+    horas
+}
+
+relation Estudia(Proyecto, Fuente)
+
+relation Monta(Antena, Instrumento 1)
+
+relation Captura(Instrumento, Imagen 1!)
+
+relation Registra(Imagen, Fuente)

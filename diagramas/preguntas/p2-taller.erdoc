@@ -1,0 +1,27 @@
+entity Cliente {
+    rut key
+    nombre
+    telefono
+}
+
+entity Bicicleta {
+    serie key
+    modelo
+}
+
+entity Mecánico {
+    run key
+    codigo_interno
+}
+
+entity Repuesto {
+    codigo key
+    precio
+    stock
+}
+
+relation Deja(Cliente, Bicicleta 1!)
+
+relation Revisa(Mecánico, Bicicleta)
+
+relation Pide(Mecánico, Repuesto)

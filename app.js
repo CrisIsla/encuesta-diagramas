@@ -105,6 +105,41 @@
         }
         continue;
       }
+      if (block.type === "preguntas") {
+        if (!(block.diagrams || []).length) errors.push(`El bloque "${block.id}" no tiene diagramas.`);
+        if (!(block.timeoutSeconds > 0)) errors.push(`El bloque "${block.id}" necesita timeoutSeconds, los segundos que se dan por pregunta.`);
+        const ids = new Set();
+        for (const d of [...(block.practice || []), ...(block.diagrams || [])]) {
+          const where = `Diagrama "${d.id}"`;
+          if (ids.has(d.id)) errors.push(`${where}: el id está repetido.`);
+          ids.add(d.id);
+          for (const layout of ["old", "new"])
+            if (!d.images || typeof d.images[layout] !== "string") errors.push(`${where}: falta la imagen ${layout}.`);
+          if (!Array.isArray(d.items) || !d.items.length) errors.push(`${where}: no tiene preguntas (items).`);
+          const itemIds = new Set();
+          for (const item of d.items || []) {
+            const here = `${where}, pregunta "${item.id}"`;
+            if (itemIds.has(item.id)) errors.push(`${here}: el id está repetido.`);
+            itemIds.add(item.id);
+            if (!item.text) errors.push(`${here}: no tiene texto.`);
+            if (!Array.isArray(item.options) || item.options.length < 2) errors.push(`${here}: necesita al menos dos opciones.`);
+            else if (!item.options.includes(item.answer)) errors.push(`${here}: la respuesta (answer) no está entre las opciones.`);
+          }
+        }
+        // the sets split the test diagrams between the layouts, and each version says which set gets which
+        const sets = block.sets || {};
+        const inSets = Object.values(sets).flat();
+        const test = (block.diagrams || []).map((d) => d.id);
+        if (inSets.length !== test.length || test.some((id) => !inSets.includes(id)) || inSets.some((id) => !test.includes(id)))
+          errors.push(`El bloque "${block.id}": sets debe repartir exactamente sus diagramas.`);
+        if (!(block.versions || []).length) errors.push(`El bloque "${block.id}" no tiene versiones.`);
+        for (const v of block.versions || []) {
+          const ok = has(sets, v.old) && has(sets, v.new) && v.old !== v.new && ["old", "new"].includes(v.startsWith)
+            && (block.practice || []).every((d) => ["old", "new"].includes((v.practice || {})[d.id]));
+          if (!ok) errors.push(`El bloque "${block.id}": la versión ${v.version} está mal armada (old, new, startsWith, practice).`);
+        }
+        continue;
+      }
       for (const q of questionsOf(block)) {
         if (!q.id) {
           errors.push(`Una pregunta del bloque "${block.id}" no tiene id.`);
@@ -211,6 +246,33 @@
           steps.push({ kind: "palabra", block: block.id, key: `${block.id}/${id}`, diagram: id, layout: layoutOf.get(id), practice: false, order: orderOf(byId.get(id)) });
         continue;
       }
+      if (block.type === "preguntas") {
+        // one of the versions, by the id: the practice in the version's layouts, then its two sets of diagrams
+        // taking turns, each set in a random order, starting with the version's layout. Each diagram's
+        // questions come one by one, their options in a random order, and then its ease rating.
+        const versions = block.versions;
+        const version = inOrder ? versions[0] : versions[Math.abs(hash(`${config.id}|${participant}|${block.id}|version`)) % versions.length];
+        const pick = random(hash(`${config.id}|${participant}|${block.id}|options`));
+        const byId = new Map([...(block.practice || []), ...block.diagrams].map((d) => [d.id, d]));
+        const add = (d, layout, practice) => {
+          const prefix = `${block.id}/${practice ? "practica/" : ""}${d.id}`;
+          for (const item of d.items) {
+            const all = item.options.map((_, i) => i);
+            steps.push({ kind: "pregunta", block: block.id, key: `${prefix}/${item.id}`, diagram: d.id, item: item.id, layout, practice, version: version.version, order: inOrder ? all : shuffled(all, pick) });
+          }
+          steps.push({ kind: "facilidad", block: block.id, key: `${prefix}/facilidad`, diagram: d.id, layout, practice, version: version.version });
+        };
+        for (const d of block.practice || []) add(d, version.practice[d.id], true);
+        if ((block.practice || []).length) steps.push({ kind: "practice-end", block: block.id });
+        const other = version.startsWith === "old" ? "new" : "old";
+        const first = inOrder ? block.sets[version[version.startsWith]] : shuffled(block.sets[version[version.startsWith]], rand);
+        const second = inOrder ? block.sets[version[other]] : shuffled(block.sets[version[other]], rand);
+        for (let i = 0; i < Math.max(first.length, second.length); i++) {
+          if (first[i]) add(byId.get(first[i]), version.startsWith, false);
+          if (second[i]) add(byId.get(second[i]), other, false);
+        }
+        continue;
+      }
       const questions = questionsOf(block);
       for (const q of block.shuffle && !inOrder ? shuffled(questions, rand) : questions) {
         const step = { kind: "question", block: block.id, question: q.id };
@@ -243,18 +305,35 @@
     "participant", "survey", "block", "question", "seq", "type",
     "practice", "layout", "answer", "score", "expected", "options", "first_key_ms",
     "image", "fig", "attributes", "connection", "algorithm", "shown_pos", "rank", "tie",
-    "choice", "comment", "ms", "zoom_opens", "image_format", "interrupted", "screen", "touch", "started_at", "finished_at",
+    "choice", "comment", "ms", "zoom_opens", "item", "item_type", "dont_know", "timeout", "rating", "version",
+    "image_format", "interrupted", "screen", "touch", "started_at", "finished_at",
   ];
 
   /**
-   * The long table: a row per diagram of the palabra part, a row per image of
-   * each rank question, one per choice question.
+   * The long table: a row per diagram of the palabra part, a row per question
+   * and per rating of the preguntas part, a row per image of each rank
+   * question, one per choice question.
    */
   function rowsOf(session) {
     const device = session.device || {};
     const rows = [];
     let seq = 0;
     for (const step of session.steps) {
+      if (step.kind === "pregunta" || step.kind === "facilidad") {
+        seq += 1;
+        const a = session.answers[step.key] || {};
+        rows.push({
+          participant: session.participant, survey: session.survey, block: step.block, question: step.diagram, seq,
+          type: step.kind, practice: step.practice ? 1 : 0, layout: step.layout, version: step.version ?? "",
+          item: step.kind === "pregunta" ? step.item : "facilidad", item_type: a.itemType ?? "",
+          answer: a.text ?? "", score: a.score ?? "", expected: a.expected ?? "", options: (a.options || []).join(" / "), shown_pos: a.position ?? "",
+          dont_know: step.kind === "pregunta" ? (a.dontKnow ? 1 : 0) : "", timeout: step.kind === "pregunta" ? (a.timeout ? 1 : 0) : "",
+          rating: a.value ?? "", ms: a.ms == null ? "" : Math.round(a.ms), interrupted: a.interrupted ? 1 : 0, zoom_opens: a.zooms ?? "",
+          screen: `${device.width}x${device.height}`, touch: device.touch ? 1 : 0,
+          started_at: session.startedAt, finished_at: session.finishedAt || "",
+        });
+        continue;
+      }
       if (step.kind === "palabra") {
         seq += 1;
         const a = session.answers[step.key] || {};
@@ -350,7 +429,8 @@
   let onQuestion = false; // a question is on screen, so its time runs
   let shownAt = 0; // when that time last started
   let screen = null; // the rank question on screen, for the viewer and resizes
-  let trial = null; // a palabra diagram on screen: when it appeared, and whether it was interrupted
+  let trial = null; // a diagram on screen to answer about: when it appeared, and whether it was interrupted
+  let timer = 0; // the time limit of the question on screen
   let preloaded = []; // the next ranking's images, held so the browser doesn't drop them before they're shown
 
   function h(tag, props, ...children) {
@@ -369,6 +449,7 @@
   function show(...nodes) {
     screen = null;
     trial = null;
+    clearTimeout(timer);
     onQuestion = false;
     shownAt = 0;
     app.replaceChildren(...nodes);
@@ -416,7 +497,7 @@
     });
   }
 
-  const answerable = (step) => step.kind === "question" || (step.kind === "palabra" && !step.practice);
+  const answerable = (step) => step.kind === "question" || (["palabra", "pregunta", "facilidad"].includes(step.kind) && !step.practice);
   // «Pregunta N de M» counts within the block on screen, so the rankings go 1 to 10 whatever comes before them
   const inBlock = (s, step) => s.steps.filter((x) => x.kind === "question" && x.block === step.block);
   const questionCount = (s, step) => inBlock(s, step).length;
@@ -430,6 +511,9 @@
     const block = blocks.get(step.block);
     return [...(block.practice || []), ...block.diagrams].find((d) => d.id === step.diagram);
   }
+  const itemOf = (step) => palabraDiagram(step).items.find((i) => i.id === step.item);
+  // the right answer of a step's diagram or question, for the practice feedback and the preview
+  const rightAnswer = (step) => (step.kind === "pregunta" ? itemOf(step).answer : (palabraDiagram(step).options || [])[0]);
 
   // The ranking screenshots are SVGs, each with a PNG twin. WebKit (Safari, and every browser on an iPhone or
   // iPad) draws these SVGs at their own size whatever size the page gives them (WebKit bug 23113), so only
@@ -516,7 +600,8 @@
     const step = session.steps[position];
     if (step.kind === "intro") renderIntro(step);
     else if (step.kind === "practice-end") renderPracticeEnd(step);
-    else if (step.kind === "palabra") renderPalabraReady(step);
+    else if (step.kind === "palabra" || step.kind === "pregunta") renderPalabraReady(step);
+    else if (step.kind === "facilidad") renderRating(step);
     else if (questions.get(step.question).type === "rank") renderRank(step);
     else renderChoice(step);
   }
@@ -609,10 +694,12 @@
       h("strong", {}, "Vista previa"),
       h("span", {}, "no se guarda nada"),
       q ? h("code", {}, q.id)
-        : step.kind === "palabra"
+        : step.kind === "palabra" || step.kind === "pregunta"
           ? h("span", {}, `«${step.diagram}» en el layout ${step.layout === "old" ? "antiguo" : "nuevo"}${
-            palabraDiagram(step).options ? ` · correcta: «${palabraDiagram(step).options[0]}»` : ""}`)
-          : h("span", {}, `introducción de «${step.block}»`),
+            rightAnswer(step) ? ` · correcta: «${rightAnswer(step)}»` : ""}`)
+          : step.kind === "facilidad"
+            ? h("span", {}, `«${step.diagram}»: facilidad`)
+            : h("span", {}, `introducción de «${step.block}»`),
       shows ? h("span", {}, `fig${shows.fig} · ${shows.attributes === "with" ? "con" : "sin"} atributos · tarjetas: conexión · algoritmo`) : null,
       // like the end of the preview, leaving drops ?png or ?svg
       h("a", { href: home }, "Salir"));
@@ -645,25 +732,39 @@
         h("div", { class: "row" },
           backButton(),
           h("button", { class: "primary big", onclick: () => go(session.position + 1) }, "Continuar"))));
-    // the first ranking after the intro, or the diagrams of a palabra block, load while it is read
+    // the first ranking after the intro, or the diagrams of a one-at-a-time block, load while it is read
     preloadNext();
-    if (blocks.get(step.block).type === "palabra")
+    if (blocks.get(step.block).diagrams) {
+      const loaded = new Set();
       for (const s of session.steps)
-        if (s.kind === "palabra" && s.block === step.block) new Image().src = palabraDiagram(s).images[s.layout];
+        if ((s.kind === "palabra" || s.kind === "pregunta") && s.block === step.block && !loaded.has(s.key)) {
+          loaded.add(s.key);
+          new Image().src = palabraDiagram(s).images[s.layout];
+        }
+    }
   }
 
   function renderPracticeEnd(step) {
+    const questions = blocks.get(step.block).type === "preguntas";
     show(
       h("section", { class: "page narrow" },
         previewBar(step),
         progress(step),
         h("h1", {}, "Terminó la práctica"),
-        h("p", {}, "Ahora empiezan los diagramas de verdad. Ya no verás la respuesta esperada."),
+        h("p", {}, `Ahora empiezan los diagramas de verdad. Ya no verás ${questions ? "si acertaste" : "la respuesta esperada"}.`),
         h("div", { class: "row" },
           h("button", { class: "primary big", onclick: () => go(session.position + 1) }, "Continuar"))));
   }
 
+  /** «Diagrama 3 de 8», and for a question also which of the diagram's questions it is. */
   function palabraLabel(step) {
+    if (step.kind === "pregunta") {
+      const diagrams = [...new Set(session.steps.filter((s) => s.kind === "pregunta" && s.block === step.block && s.practice === step.practice).map((s) => s.diagram))];
+      const items = palabraDiagram(step).items;
+      const parts = [step.practice ? "Práctica" : null, `Diagrama ${diagrams.indexOf(step.diagram) + 1} de ${diagrams.length}`,
+        `Pregunta ${items.findIndex((i) => i.id === step.item) + 1} de ${items.length}`];
+      return h("p", { class: "step-label" }, parts.filter(Boolean).join(" · "));
+    }
     const trials = session.steps.filter((s) => s.kind === "palabra" && !s.practice);
     return h("p", { class: "step-label" }, step.practice ? "Práctica" : `Diagrama ${trials.indexOf(step) + 1} de ${trials.length}`);
   }
@@ -671,15 +772,34 @@
   /** Before each diagram: the question and a button, so the clock starts with the diagram. */
   function renderPalabraReady(step) {
     const block = blocks.get(step.block);
+    // what the time limit left unanswered is said here, once
+    const notice = session.notice;
+    session.notice = null;
     show(
       h("section", { class: "page narrow" },
         previewBar(step),
         palabraLabel(step),
-        h("h2", {}, block.prompt),
+        notice ? h("p", { class: "timeout-note" }, notice) : null,
+        h("h2", {}, step.kind === "pregunta" ? itemOf(step).text : block.prompt),
         h("p", { class: "hint" }, block.hint || ""),
         h("div", { class: "row" },
           h("button", { class: "primary big", id: "reveal", onclick: () => revealPalabra(step) }, "Ver diagrama"))));
     document.getElementById("reveal").focus();
+  }
+
+  /** After a diagram's questions: how easy they were, 1 to 7. */
+  function renderRating(step) {
+    const pick = (value) => {
+      session.answers[step.key] = { value };
+      go(session.position + 1);
+    };
+    show(
+      h("section", { class: "page narrow" },
+        previewBar(step),
+        h("p", { class: "step-label" }, step.practice ? "Práctica" : "Sobre este diagrama"),
+        h("h2", {}, "En general, ¿qué tan fácil fue responder las preguntas de este diagrama?"),
+        h("div", { class: "scale" }, [1, 2, 3, 4, 5, 6, 7].map((n) => h("button", { type: "button", onclick: () => pick(n) }, String(n)))),
+        h("div", { class: "scale-labels" }, h("span", {}, "1 = muy difícil"), h("span", {}, "7 = muy fácil"))));
   }
 
   /**
@@ -709,31 +829,53 @@
         area.scrollTop = focus.y * img.offsetHeight - area.clientHeight / 2;
       }
     });
+    // a question about the diagram, or the diagram's own options («¿qué representa?»)
+    const item = step.kind === "pregunta" ? itemOf(step) : null;
+    const given = item ? item.options : d.options;
+    const right = item ? item.answer : (d.options || [])[0];
     // the options in this person's order; they wait, disabled, until the diagram is on screen
-    const shown = d.options ? (step.order || d.options.map((_, i) => i)).map((i) => d.options[i]) : null;
+    const shown = given ? (step.order || given.map((_, i) => i)).map((i) => given[i]) : null;
     const choices = (shown || []).map((option, i) =>
       h("button", { class: "option", type: "button", disabled: true, onclick: () => submit(i) }, option));
+    if (item) choices.push(h("button", { class: "option dont-know", type: "button", disabled: true, onclick: () => submit(-1) }, "No sé"));
     const input = shown ? null : h("input", { id: "answer", type: "text", maxlength: "80", autocomplete: "off", spellcheck: "false", placeholder: "Una o dos palabras" });
     const next = shown ? null : h("button", { class: "primary big", disabled: true }, "Siguiente");
     let firstKey = null;
+    const finish = (answer) => {
+      session.answers[step.key] = { ...answer, interrupted: trial.interrupted, zooms };
+      session.inTrial = null;
+      trial = null;
+    };
     const submit = (picked) => {
       if (!trial) return;
       let answer;
-      if (shown) {
+      if (item) {
+        const dontKnow = picked < 0;
+        const text = dontKnow ? "No sé" : shown[picked];
+        answer = { text, score: dontKnow ? "no_se" : text === right ? "correcta" : "incorrecta", expected: right, options: shown, position: dontKnow ? "" : picked + 1, dontKnow, itemType: item.type };
+      } else if (shown) {
         const text = shown[picked];
-        answer = { text, score: text === d.options[0] ? "correcta" : "incorrecta", expected: d.options[0], options: shown, position: picked + 1 };
+        answer = { text, score: text === right ? "correcta" : "incorrecta", expected: right, options: shown, position: picked + 1 };
       } else {
         const text = input.value.trim();
         if (!text) return;
         answer = { text, score: SurveyCore.scoreAnswer(text, d.accept, d.near), expected: d.expected, firstKeyMs: firstKey };
       }
-      session.answers[step.key] = { ...answer, ms: performance.now() - trial.started, interrupted: trial.interrupted, zooms };
-      session.inTrial = null;
-      trial = null;
+      finish({ ...answer, ms: performance.now() - trial.started });
       if (step.practice) {
+        if (item) return palabraFeedback(answer.score === "correcta" ? "Correcto." : answer.dontKnow ? `La respuesta era «${right}».` : `Incorrecto: la respuesta era «${right}».`);
         if (!shown) return palabraFeedback(`Respuesta esperada: ${d.expected}.`);
-        return palabraFeedback(`${answer.score === "correcta" ? "¡Bien! " : ""}La respuesta es «${d.options[0]}».`);
+        return palabraFeedback(`${answer.score === "correcta" ? "¡Bien! " : ""}La respuesta es «${right}».`);
       }
+      go(session.position + 1);
+    };
+    // a question has a time limit; when it runs out the next screen says so
+    const seconds = item ? block.timeoutSeconds : 0;
+    const timeOut = () => {
+      if (!trial) return;
+      finish({ text: "", score: "tiempo", expected: right, options: shown, position: "", timeout: true, itemType: item.type, ms: seconds * 1000 });
+      if (step.practice) return palabraFeedback(`Se acabó el tiempo. La respuesta era «${right}».`);
+      session.notice = "Se acabó el tiempo para la pregunta anterior.";
       go(session.position + 1);
     };
     if (input) {
@@ -755,8 +897,8 @@
         h("aside", { class: "panel" },
           previewBar(step),
           palabraLabel(step),
-          h("h2", {}, block.prompt),
-          h("p", { class: "hint" }, block.hint || ""),
+          h("h2", {}, item ? item.text : block.prompt),
+          item ? null : h("p", { class: "hint" }, block.hint || ""),
           h("p", { class: "hint phone-hint" }, "Toca el diagrama para acercarlo. Con el teléfono horizontal se ve más grande."),
           shown ? h("div", { class: "options" }, choices) : [input, next])));
     try {
@@ -772,6 +914,7 @@
       trial = { started: performance.now(), interrupted };
       if (input) input.focus();
       for (const choice of choices) choice.disabled = false;
+      if (seconds) timer = setTimeout(timeOut, seconds * 1000);
     });
   }
 
@@ -1088,7 +1231,7 @@
     const stamp = new Date().toISOString().slice(0, 10);
     const answered = (s) =>
       s.steps.filter((step) =>
-        step.kind === "palabra" ? !step.practice && Boolean(s.answers[step.key]?.text)
+        ["palabra", "pregunta", "facilidad"].includes(step.kind) ? !step.practice && Boolean(s.answers[step.key])
           : step.kind === "question" && questions.has(step.question)
             && SurveyCore.isAnswered(questions.get(step.question), s.answers[step.question])).length;
     const minutes = (s) => (s.finishedAt ? ((Date.parse(s.finishedAt) - Date.parse(s.startedAt)) / 60000).toFixed(1) : "–");
