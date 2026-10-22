@@ -2,6 +2,7 @@
 // hand. Node 18 or later, no dependencies:
 //   node server.js              the survey at http://localhost:3000
 //   PORT=8080 node server.js
+//   node server.js --dev        npm run dev: the survey only to look at, with a list of every screen
 // Each answer goes to datos/<survey id>/<participant id>.json (or under the
 // folder in DATOS). The researcher's page, /admin?clave=…, counts them and
 // gives the CSV; its key is SURVEY_KEY, or datos/clave.txt, written on the
@@ -16,6 +17,7 @@ const core = require("./app.js");
 const ROOT = __dirname;
 const DATA = path.resolve(process.env.DATOS || path.join(ROOT, "datos"));
 const PORT = Number(process.env.PORT ?? 3000);
+const DEV = process.argv.includes("--dev");
 const LIMIT = 2 * 1024 * 1024; // bytes an answer may take
 const ID = /^[A-Za-z0-9_-]{1,40}$/;
 const TYPES = {
@@ -155,6 +157,11 @@ function serveFile(req, res, pathname) {
   if (!allowed || !abs.startsWith(ROOT + path.sep)) return send(res, 404, "No existe");
   fs.stat(abs, (error, stat) => {
     if (error || !stat.isFile()) return send(res, 404, "No existe");
+    // only the page served in dev mode carries the flag, so no participant can turn it on
+    if (DEV && file === "/index.html") {
+      const page = fs.readFileSync(abs, "utf8").replace("</head>", "<script>window.SURVEY_DEV = true;</script>\n</head>");
+      return send(res, 200, page, TYPES[".html"]);
+    }
     res.writeHead(200, { "Content-Type": TYPES[path.extname(abs)] || "application/octet-stream", "Content-Length": stat.size, "Cache-Control": "no-cache" });
     if (req.method === "HEAD") return res.end();
     fs.createReadStream(abs).pipe(res);
@@ -204,4 +211,5 @@ server.listen(PORT, () => {
   const { port } = server.address();
   console.log(`Encuesta en http://localhost:${port}/ — respuestas en ${DATA}`);
   console.log(`Página del investigador: http://localhost:${port}/admin?clave=${KEY}`);
+  if (DEV) console.log("Modo dev: la encuesta no guarda nada y su primera página lleva a cualquier pantalla.");
 });

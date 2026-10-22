@@ -15,7 +15,7 @@ npm start
 
 That serves the survey at http://localhost:3000 and saves every finished answer in `datos/`. The terminal also prints the researcher's page, `/admin?clave=…`, which counts the answers and downloads them all as one CSV or JSON. `PORT=8080 npm start` changes the port; `SURVEY_KEY=…` sets the key.
 
-`#preview` walks through every screen without saving anything and names each version; `#preview=5` jumps to ranking 5, `#preview=palabra` to part 2 and `#preview=preguntas` to part 3.
+`#preview` walks through every screen without saving anything and names each version; `#preview=5` jumps to ranking 5, `#preview=palabra` to part 2, `#preview=preguntas` to part 3, `#preview=general-fig3-no` to that question and `#preview=preguntas/p2-taller/new` to that diagram of part 3 in the new layout. `npm run dev` is for looking the survey over: its «Comenzar» goes to the preview, and its first page links to every introduction, question and diagram, to open them in any order.
 
 Opened as a file instead of through the server, the answers stay in the browser and can be downloaded at the end.
 

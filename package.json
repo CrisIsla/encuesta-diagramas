@@ -4,7 +4,8 @@
   "description": "Encuesta sobre diagramas ER de ERdoc: rankings y ¿qué representa?",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js --dev"
   },
   "engines": {
     "node": ">=18"

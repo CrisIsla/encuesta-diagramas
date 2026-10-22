@@ -409,6 +409,8 @@
   // ------------------------------------------------------------- interface
 
   const config = global.SURVEY;
+  // set by `npm run dev`, to look the survey over: «Comenzar» goes to the preview and the welcome page lists every screen
+  const dev = Boolean(global.SURVEY_DEV);
   const app = document.getElementById("app");
   const viewer = document.getElementById("viewer");
   // a question's screenshots are all cropped to one box, given as `size`; this is the uncropped canvas
@@ -523,9 +525,10 @@
   const webkit = navigator.vendor === "Apple Computer, Inc." || (/AppleWebKit\//.test(ua) && !/(Chrome|Chromium)\//.test(ua));
   const svgOk = !webkit && /(Chrome|Chromium|Firefox)\//.test(ua);
   const pngImages = params.has("png") || (!params.has("svg") && !svgOk);
-  // this page without ?png/?svg or a #screen, where leaving the preview goes. Not location.pathname: on a
-  // network path Firefox's address is file://///host/…, and its path alone would lose the host.
-  const home = location.href.replace(/[?#].*$/, "");
+  // this page without a #screen, where leaving the preview goes, and without ?png/?svg, so whoever starts next gets
+  // their browser's own format; dev mode keeps them, as nobody starts a real survey there. Not location.pathname:
+  // on a network path Firefox's address is file://///host/…, and its path alone would lose the host.
+  const home = location.href.replace(dev ? /#.*$/ : /[?#].*$/, "");
   const imageUrl = (image) => (pngImages ? config.images[image].replace(/\.svg$/, ".png") : config.images[image]);
 
   function describe(image) {
@@ -539,7 +542,7 @@
     closeViewer();
     const hash = decodeURIComponent(location.hash.slice(1));
     if (hash === "resultados") return renderResults();
-    const match = /^preview(?:=([\w-]+))?$/.exec(hash);
+    const match = /^preview(?:=(.+))?$/.exec(hash);
     if (match) return startPreview(match[1] || "0");
     preview = false;
     session = load("current", null);
@@ -572,8 +575,13 @@
     go(0);
   }
 
-  /** `n` counts the rankings, and "0" starts at the very beginning; a block's id (perfil, palabra) starts at that block. */
-  function startPreview(n) {
+  /**
+   * `target` is a number that counts the rankings ("0" starts at the very beginning), or the id of a
+   * block (perfil, palabra), of a question or of a diagram, where the preview starts. A diagram's id may
+   * come after its block's (preguntas/p2-taller: two blocks have a p2-taller) and before a layout
+   * (5-hospital/new), which every screen of that diagram then shows.
+   */
+  function startPreview(target) {
     preview = true;
     session = {
       survey: config.id,
@@ -585,10 +593,16 @@
       position: 0,
       answers: {},
     };
+    const parts = target.split("/");
+    const layout = parts.length > 1 && ["old", "new"].includes(parts[parts.length - 1]) ? parts.pop() : null;
+    const [n, block] = [parts.pop(), parts.pop()];
     let count = 0;
-    const position = /^\d+$/.test(n)
+    const position = /^\d+$/.test(n) && !block
       ? session.steps.findIndex((step) => step.shown && ++count === Number(n))
-      : session.steps.findIndex((step) => step.block === n);
+      : session.steps.findIndex((step) => (!block || step.block === block) && [step.block, step.question, step.diagram].includes(n));
+    const first = session.steps[position];
+    if (layout && first && first.diagram)
+      for (const step of session.steps) if (step.block === first.block && step.diagram === first.diagram) step.layout = layout;
     go(Math.max(0, position));
   }
 
@@ -615,7 +629,7 @@
 
   function finish() {
     if (preview) {
-      // back to the start without ?png or ?svg, so whoever starts next gets their browser's own format
+      // back to the start, without ?png or ?svg outside dev mode (see `home`)
       location.assign(home);
       return;
     }
@@ -637,9 +651,12 @@
   // --------------------------------------------------------------- screens
 
   function renderWelcome() {
-    const pending = session && session.position < session.steps.length ? session : null;
+    // dev mode leaves a participant's unfinished survey alone, for when the survey runs for real again
+    const pending = !dev && session && session.position < session.steps.length ? session : null;
     const mark = h("div", { class: "mark", "aria-hidden": "true" });
     mark.innerHTML = MARK;
+    // the participant's id is made up here and never shown: it only tells the answers apart
+    const begin = dev ? () => { location.hash = "preview"; } : () => start(newCode());
     show(
       h("section", { class: "page narrow" },
         mark,
@@ -652,9 +669,35 @@
                 h("button", { class: "primary big", onclick: () => go(pending.position) }, "Continuar"),
                 h("button", { onclick: discard }, "Descartarla y empezar otra")))
           : h("div", { class: "start" },
-              // the participant's id is made up here and never shown: it only tells the answers apart
-              h("button", { class: "primary big", onclick: () => start(newCode()) }, "Comenzar"))));
+              h("button", { class: "primary big", onclick: begin }, "Comenzar")),
+        dev ? devIndex() : null));
     sendPending();
+  }
+
+  /**
+   * Dev mode's list of every screen. Each opens in the preview, so the questions can be looked at in
+   * any order, and the diagrams of the one-at-a-time parts in either layout. A diagram's links name its
+   * block too, as two blocks can have a diagram with the same id.
+   */
+  function devIndex() {
+    const link = (target, ...text) => h("a", { href: `#preview=${target}` }, text);
+    const code = (text) => h("code", {}, text);
+    const note = (text) => h("span", { class: "muted" }, text);
+    const about = (block, d) => [(block.practice || []).includes(d) ? "práctica" : null,
+      d.items ? `${d.items.length} pregunta${d.items.length === 1 ? "" : "s"}` : null].filter(Boolean).join(", ");
+    return h("nav", { class: "dev-index", "aria-label": "Pantallas de la encuesta" },
+      h("p", {}, h("strong", {}, "Modo dev:"), " no se guarda nada y da igual lo que respondas. Abre cualquier pantalla, en el orden que quieras:"),
+      config.blocks.flatMap((block) => [
+        h("h2", {}, block.intro ? block.intro.title : block.id),
+        h("ul", {},
+          block.intro ? h("li", {}, link(block.id, "Introducción")) : null,
+          block.diagrams
+            ? [...(block.practice || []), ...block.diagrams].map((d) =>
+                h("li", {}, code(d.id), " ", link(`${block.id}/${d.id}/old`, "antiguo"), " · ", link(`${block.id}/${d.id}/new`, "nuevo"),
+                  about(block, d) ? note(` (${about(block, d)})`) : null))
+            : questionsOf(block).map((q) =>
+                h("li", {}, link(q.id, code(q.id)), " ", note(q.type === "rank" ? `${q.images.length} versiones` : q.prompt)))),
+      ]));
   }
 
   // ------------------------------------------------------------ the server
@@ -701,8 +744,8 @@
             ? h("span", {}, `«${step.diagram}»: facilidad`)
             : h("span", {}, `introducción de «${step.block}»`),
       shows ? h("span", {}, `fig${shows.fig} · ${shows.attributes === "with" ? "con" : "sin"} atributos · tarjetas: conexión · algoritmo`) : null,
-      // like the end of the preview, leaving drops ?png or ?svg
-      h("a", { href: home }, "Salir"));
+      // like the end of the preview, it goes to `home`, which in dev mode holds the list of screens
+      h("a", { href: home }, dev ? "Índice" : "Salir"));
   }
 
   /** Back only within a block, so what a later block points out can't change earlier answers. */
@@ -717,6 +760,11 @@
       isLast() ? "Terminar" : "Siguiente →");
     button.disabled = !preview && !SurveyCore.isAnswered(q, answer);
     return button;
+  }
+
+  /** The preview's «Siguiente» on a diagram's screens and its rating, which otherwise only go on with an answer. */
+  function skipButton() {
+    return h("button", { onclick: () => go(session.position + 1) }, isLast() ? "Terminar" : "Siguiente →");
   }
 
   function renderIntro(step) {
@@ -783,7 +831,10 @@
         h("h2", {}, step.kind === "pregunta" ? itemOf(step).text : block.prompt),
         h("p", { class: "hint" }, block.hint || ""),
         h("div", { class: "row" },
-          h("button", { class: "primary big", id: "reveal", onclick: () => revealPalabra(step) }, "Ver diagrama"))));
+          // the preview goes either way without seeing the diagram, as it does on every other screen
+          preview ? backButton() : null,
+          h("button", { class: "primary big", id: "reveal", onclick: () => revealPalabra(step) }, "Ver diagrama"),
+          preview ? skipButton() : null)));
     document.getElementById("reveal").focus();
   }
 
@@ -799,7 +850,9 @@
         h("p", { class: "step-label" }, step.practice ? "Práctica" : "Sobre este diagrama"),
         h("h2", {}, "En general, ¿qué tan fácil fue responder las preguntas de este diagrama?"),
         h("div", { class: "scale" }, [1, 2, 3, 4, 5, 6, 7].map((n) => h("button", { type: "button", onclick: () => pick(n) }, String(n)))),
-        h("div", { class: "scale-labels" }, h("span", {}, "1 = muy difícil"), h("span", {}, "7 = muy fácil"))));
+        h("div", { class: "scale-labels" }, h("span", {}, "1 = muy difícil"), h("span", {}, "7 = muy fácil")),
+        // the preview goes on without a rating, too
+        preview ? h("div", { class: "row" }, backButton(), skipButton()) : null));
   }
 
   /**
@@ -900,7 +953,9 @@
           h("h2", {}, item ? item.text : block.prompt),
           item ? null : h("p", { class: "hint" }, block.hint || ""),
           h("p", { class: "hint phone-hint" }, "Toca el diagrama para acercarlo. Con el teléfono horizontal se ve más grande."),
-          shown ? h("div", { class: "options" }, choices) : [input, next])));
+          shown ? h("div", { class: "options" }, choices) : [input, next],
+          // the preview also leaves the diagram without an answer
+          preview ? h("div", { class: "row" }, backButton(), skipButton()) : null)));
     try {
       await img.decode();
     } catch {

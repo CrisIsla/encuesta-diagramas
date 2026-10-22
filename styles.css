@@ -177,6 +177,19 @@ label { display: block; font-weight: 600; font-size: 0.95rem; margin: 28px 0 8px
   font-size: 0.9rem;
 }
 .preview-bar a { margin-left: auto; }
+/* dev mode's list of every screen, in the preview's colours: participants never see either */
+.dev-index {
+  margin-top: 32px;
+  padding: 14px 18px 16px;
+  border: 1px solid #f0d58a;
+  border-radius: var(--radius-sm);
+  background: #fff8e1;
+  font-size: 0.9rem;
+}
+.page.narrow .dev-index p { margin: 0; font-size: inherit; }
+.dev-index h2 { margin: 14px 0 2px; font-size: 0.95rem; }
+.dev-index ul { margin: 0; padding-left: 20px; }
+.dev-index li { margin: 2px 0; }
 
 /* a rank question */
 .q-head { margin-bottom: 14px; }
@@ -372,6 +385,8 @@ tr:last-child td { border-bottom: 0; }
 .panel .step-label { margin: 0; }
 /* a tap on an option answers at once, so no radio mark */
 .panel .options { margin: 4px 0 0; }
+/* the preview's «← Anterior» and «Siguiente →», a little apart from the answers */
+.panel .row { margin-top: 8px; }
 .panel .option::before { content: none; }
 .panel .option.dont-know { color: var(--muted); font-weight: 500; }
 .timeout-note { color: var(--danger); font-weight: 500; }
