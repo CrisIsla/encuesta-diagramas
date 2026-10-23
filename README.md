@@ -3,7 +3,7 @@
 A survey about ERdoc's diagrams, in two steps:
 
 1. **Three questions about the person**: whether they took Bases de Datos (CC3201), whether they know what an ER diagram is and whether they know ERdoc Playground.
-2. **Pairs**: 11 questions, each with two versions of one diagram side by side, to tap the one they like more. The two differ in one setting only: 9 pairs compare the old and the new layout (without attributes; fig1–fig5 plus universidad, torneo, metro and editorial) and 2 compare lines to the edge against lines to the centre, on the two recursive relationships where the difference shows (fig2 and supervision).
+2. **Pairs**: 10 questions, from the simplest diagram to the most complex, each with two versions of one diagram side by side, to tap the one they like more. The two differ in one setting only: 9 pairs compare the old and the new layout, both with lines to the centre and without attributes (fig1, fig3, fig4, fig5, supervision, universidad, torneo, metro and editorial) and 1 compares lines to the edge against lines to the centre on the old layout: fig2's Empleado–Maneja, the only pair with attributes, where the recursive relationship makes the difference show.
 
 Two more parts, «¿Qué representa?» and «Preguntas sobre el diagrama», were taken out, and the pairs replaced the rankings. The app still runs all three: their blocks are in `questions.js` at commit 54779ea (`git show 54779ea:questions.js`), with that README's notes on them, and the two parts' screenshots and `.erdoc` sources are still in `img/` and `diagramas/`. The CSV keeps their columns, empty.
 

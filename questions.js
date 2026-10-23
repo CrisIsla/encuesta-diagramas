@@ -5,8 +5,8 @@
 //
 // Questions name screenshots by their original file name,
 //   fig<N>_<with|no>-attributes_<center|edge>-connection_<old|new>-algorithm
-// (plus a tag like _conexion when a version is captured again with its own
-// crop) and `images` maps each name to its file in img/: an SVG of ERdoc's own drawing,
+// (a tag at the end, like _detalle, tells apart a second capture of the same
+// version with its own crop) and `images` maps each name to its file in img/: an SVG of ERdoc's own drawing,
 // with a PNG of the same picture beside it, which Safari, iPhones, iPads and
 // browsers the app doesn't recognise are shown instead (?png or ?svg in the
 // address forces one). The files have meaningless
@@ -32,27 +32,25 @@ Toma unos 5 minutos.`,
   thanks: `Eso es todo. ¡Muchas gracias por tu tiempo!`,
 
   images: {
-    "fig1_no-attributes_edge-connection_old-algorithm": "img/097bc4.svg",
-    "fig1_no-attributes_edge-connection_new-algorithm": "img/f852ac.svg",
-    "fig2_no-attributes_edge-connection_old-algorithm": "img/d9e62a.svg",
-    "fig2_no-attributes_edge-connection_new-algorithm": "img/09df08.svg",
-    "fig3_no-attributes_edge-connection_old-algorithm": "img/a30825.svg",
-    "fig3_no-attributes_edge-connection_new-algorithm": "img/d63508.svg",
-    "fig4_no-attributes_edge-connection_old-algorithm": "img/37fd42.svg",
-    "fig4_no-attributes_edge-connection_new-algorithm": "img/0ee4c2.svg",
-    "fig5_no-attributes_edge-connection_old-algorithm": "img/a28e38.svg",
-    "fig5_no-attributes_edge-connection_new-algorithm": "img/f9a663.svg",
-    "fig6_no-attributes_edge-connection_old-algorithm": "img/f720bb.svg",
-    "fig6_no-attributes_edge-connection_new-algorithm": "img/b2e17b.svg",
-    "fig7_no-attributes_edge-connection_old-algorithm": "img/5c7658.svg",
-    "fig7_no-attributes_edge-connection_new-algorithm": "img/c864b6.svg",
-    "fig8_no-attributes_edge-connection_old-algorithm": "img/bf07ad.svg",
-    "fig8_no-attributes_edge-connection_new-algorithm": "img/6eb443.svg",
-    "fig9_no-attributes_edge-connection_old-algorithm": "img/04ac55.svg",
-    "fig9_no-attributes_edge-connection_new-algorithm": "img/d9400e.svg",
-    "fig2_no-attributes_edge-connection_new-algorithm_conexion": "img/36b290.svg",
-    "fig2_no-attributes_center-connection_new-algorithm_conexion": "img/cf7c4e.svg",
-    "fig10_no-attributes_edge-connection_new-algorithm": "img/2a66f5.svg",
+    "fig1_no-attributes_center-connection_old-algorithm": "img/097bc4.svg",
+    "fig1_no-attributes_center-connection_new-algorithm": "img/f852ac.svg",
+    "fig3_no-attributes_center-connection_old-algorithm": "img/a30825.svg",
+    "fig3_no-attributes_center-connection_new-algorithm": "img/d63508.svg",
+    "fig4_no-attributes_center-connection_old-algorithm": "img/37fd42.svg",
+    "fig4_no-attributes_center-connection_new-algorithm": "img/0ee4c2.svg",
+    "fig5_no-attributes_center-connection_old-algorithm": "img/a28e38.svg",
+    "fig5_no-attributes_center-connection_new-algorithm": "img/f9a663.svg",
+    "fig6_no-attributes_center-connection_old-algorithm": "img/f720bb.svg",
+    "fig6_no-attributes_center-connection_new-algorithm": "img/b2e17b.svg",
+    "fig7_no-attributes_center-connection_old-algorithm": "img/5c7658.svg",
+    "fig7_no-attributes_center-connection_new-algorithm": "img/c864b6.svg",
+    "fig8_no-attributes_center-connection_old-algorithm": "img/bf07ad.svg",
+    "fig8_no-attributes_center-connection_new-algorithm": "img/6eb443.svg",
+    "fig9_no-attributes_center-connection_old-algorithm": "img/04ac55.svg",
+    "fig9_no-attributes_center-connection_new-algorithm": "img/d9400e.svg",
+    "fig2_with-attributes_edge-connection_old-algorithm": "img/36b290.svg",
+    "fig2_with-attributes_center-connection_old-algorithm": "img/cf7c4e.svg",
+    "fig10_no-attributes_center-connection_old-algorithm": "img/2a66f5.svg",
     "fig10_no-attributes_center-connection_new-algorithm": "img/a22424.svg",
   },
 
@@ -69,15 +67,15 @@ Toma unos 5 minutos.`,
       ],
     },
     {
-      // Part 1: pairs. Each question shows two versions of one diagram that
-      // differ in one setting only: the layout algorithm (old or new, without
-      // attributes), or where the lines meet the shapes (edge or centre, with
-      // the new layout). fig1–fig5 are the diagrams in diagramas/; fig6–fig10
-      // are the ones in diagramas/pares/ (universidad, torneo, metro,
-      // editorial, supervision), as `erdoc` says. The retake tool writes each
-      // question's `size` and `zoom`.
+      // Part 1: pairs, from the simplest diagram to the most complex, each
+      // diagram once. Each question shows two versions of one diagram that
+      // differ in one setting only: the layout algorithm (old or new, with the
+      // lines to the centre), or where the lines meet the shapes (edge or
+      // centre, on the old layout: fig2's pair, the only one with attributes). fig1–fig5 are the diagrams in diagramas/;
+      // fig6–fig10 are the ones in diagramas/pares/ (universidad, torneo,
+      // metro, editorial, supervision), as `erdoc` says. The retake tool
+      // writes each question's `size` and `zoom`.
       id: "pares",
-      shuffle: true,
       intro: {
         title: "¿Cuál te gusta más?",
         text: `Verás dos versiones de un mismo diagrama, una al lado de la otra. Las dos muestran el mismo modelo; solo cambia cómo está dibujado.
@@ -87,48 +85,44 @@ Toca la que más te guste. Con 🔍 puedes verlas en grande y pasar de una a otr
       prompt: "¿Cuál de los dos te gusta más?",
       questions: [
         { id: "layout-fig1", erdoc: "fig1", size: [869, 700], zoom: 2, images: [
-          "fig1_no-attributes_edge-connection_old-algorithm",
-          "fig1_no-attributes_edge-connection_new-algorithm",
+          "fig1_no-attributes_center-connection_old-algorithm",
+          "fig1_no-attributes_center-connection_new-algorithm",
         ] },
-        { id: "layout-fig2", erdoc: "fig2", size: [793, 317], zoom: 2, images: [
-          "fig2_no-attributes_edge-connection_old-algorithm",
-          "fig2_no-attributes_edge-connection_new-algorithm",
+        { id: "conexion-fig2", erdoc: "fig2", size: [886, 460], zoom: 2, hint: "Es el mismo diagrama: fíjate en cómo llegan las líneas a las figuras.", images: [
+          "fig2_with-attributes_edge-connection_old-algorithm",
+          "fig2_with-attributes_center-connection_old-algorithm",
         ] },
         { id: "layout-fig3", erdoc: "fig3", size: [894, 886], zoom: 1.2404, images: [
-          "fig3_no-attributes_edge-connection_old-algorithm",
-          "fig3_no-attributes_edge-connection_new-algorithm",
+          "fig3_no-attributes_center-connection_old-algorithm",
+          "fig3_no-attributes_center-connection_new-algorithm",
+        ] },
+        { id: "layout-supervision", erdoc: "pares/supervision", size: [1380, 764], zoom: 1.2648, images: [
+          "fig10_no-attributes_center-connection_old-algorithm",
+          "fig10_no-attributes_center-connection_new-algorithm",
         ] },
         { id: "layout-fig4", erdoc: "fig4", size: [764, 886], zoom: 0.8376, images: [
-          "fig4_no-attributes_edge-connection_old-algorithm",
-          "fig4_no-attributes_edge-connection_new-algorithm",
-        ] },
-        { id: "layout-fig5", erdoc: "fig5", size: [872, 886], zoom: 0.6769, images: [
-          "fig5_no-attributes_edge-connection_old-algorithm",
-          "fig5_no-attributes_edge-connection_new-algorithm",
-        ] },
-        { id: "layout-universidad", erdoc: "pares/universidad", size: [1380, 682], zoom: 0.8381, images: [
-          "fig6_no-attributes_edge-connection_old-algorithm",
-          "fig6_no-attributes_edge-connection_new-algorithm",
-        ] },
-        { id: "layout-torneo", erdoc: "pares/torneo", size: [940, 886], zoom: 0.7083, images: [
-          "fig7_no-attributes_edge-connection_old-algorithm",
-          "fig7_no-attributes_edge-connection_new-algorithm",
+          "fig4_no-attributes_center-connection_old-algorithm",
+          "fig4_no-attributes_center-connection_new-algorithm",
         ] },
         { id: "layout-metro", erdoc: "pares/metro", size: [1136, 886], zoom: 0.9009, images: [
-          "fig8_no-attributes_edge-connection_old-algorithm",
-          "fig8_no-attributes_edge-connection_new-algorithm",
+          "fig8_no-attributes_center-connection_old-algorithm",
+          "fig8_no-attributes_center-connection_new-algorithm",
+        ] },
+        { id: "layout-fig5", erdoc: "fig5", size: [872, 886], zoom: 0.6769, images: [
+          "fig5_no-attributes_center-connection_old-algorithm",
+          "fig5_no-attributes_center-connection_new-algorithm",
+        ] },
+        { id: "layout-torneo", erdoc: "pares/torneo", size: [940, 886], zoom: 0.7083, images: [
+          "fig7_no-attributes_center-connection_old-algorithm",
+          "fig7_no-attributes_center-connection_new-algorithm",
         ] },
         { id: "layout-editorial", erdoc: "pares/editorial", size: [1155, 886], zoom: 0.8991, images: [
-          "fig9_no-attributes_edge-connection_old-algorithm",
-          "fig9_no-attributes_edge-connection_new-algorithm",
+          "fig9_no-attributes_center-connection_old-algorithm",
+          "fig9_no-attributes_center-connection_new-algorithm",
         ] },
-        { id: "conexion-fig2", erdoc: "fig2", size: [793, 292], zoom: 2, hint: "Es el mismo diagrama: fíjate en cómo llegan las líneas a las figuras.", images: [
-          "fig2_no-attributes_edge-connection_new-algorithm_conexion",
-          "fig2_no-attributes_center-connection_new-algorithm_conexion",
-        ] },
-        { id: "conexion-supervision", erdoc: "pares/supervision", size: [997, 886], zoom: 1.4678, hint: "Es el mismo diagrama: fíjate en cómo llegan las líneas a las figuras.", images: [
-          "fig10_no-attributes_edge-connection_new-algorithm",
-          "fig10_no-attributes_center-connection_new-algorithm",
+        { id: "layout-universidad", erdoc: "pares/universidad", size: [1380, 682], zoom: 0.8381, images: [
+          "fig6_no-attributes_center-connection_old-algorithm",
+          "fig6_no-attributes_center-connection_new-algorithm",
         ] },
       ],
     },

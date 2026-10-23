@@ -1,13 +1,19 @@
 entity Empleado {
     rut key
+    nombre
+    cargo
 }
 
 entity Departamento {
     id key
+    nombre
+    piso
 }
 
 entity Proyecto {
     id key
+    nombre
+    presupuesto
 }
 
 relation Supervisa(Empleado: [Jefe 1, Subordinado N])
