@@ -1,0 +1,43 @@
+entity Equipo {
+    id key
+}
+
+entity Torneo {
+    id key
+}
+
+entity Cuota {
+    id key
+}
+
+entity Árbitro {
+    id key
+}
+
+entity Partido {
+    id key
+}
+
+entity Comisión {
+    id key
+}
+
+entity Cancha {
+    id key
+}
+
+relation Participa(Equipo N, Torneo M)
+
+aggregation Inscripción(Participa)
+
+relation Paga(Inscripción 1!, Cuota 1)
+
+relation Arbitra(Árbitro 1, Partido N)
+
+aggregation Designación(Arbitra)
+
+relation Supervisa(Comisión 1, Designación N)
+
+relation Programa(Torneo 1, Partido N!)
+
+relation Se_juega_en(Partido N!, Cancha 1)

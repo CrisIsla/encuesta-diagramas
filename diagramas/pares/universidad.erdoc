@@ -1,0 +1,32 @@
+entity Persona {
+    id key
+}
+
+entity Estudiante extends Persona {
+}
+
+entity Docente extends Persona {
+}
+
+entity Funcionario extends Persona {
+}
+
+entity Pregrado extends Estudiante {
+}
+
+entity Postgrado extends Estudiante {
+}
+
+entity Curso {
+    id key
+}
+
+entity Departamento {
+    id key
+}
+
+relation Dicta(Docente 1, Curso N)
+
+relation Inscribe(Estudiante M, Curso N)
+
+relation Pertenece(Curso N!, Departamento 1)

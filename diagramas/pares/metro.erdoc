@@ -1,0 +1,33 @@
+entity Conductor {
+    id key
+}
+
+entity Tren {
+    id key
+}
+
+entity Línea {
+    id key
+}
+
+entity Incidente {
+    id key
+}
+
+entity Estación depends on Pertenece {
+    número pkey
+}
+
+entity Andén depends on Tiene {
+    número pkey
+}
+
+relation Opera(Conductor N, Tren M, Línea P)
+
+aggregation Servicio(Opera)
+
+relation Registra(Servicio 1, Incidente N!)
+
+relation Pertenece(Línea N, Estación 1!)
+
+relation Tiene(Estación N, Andén 1!)

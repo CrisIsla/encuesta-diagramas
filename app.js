@@ -9,8 +9,9 @@
 
   // ------------------------------------------------------------------ core
 
+  // a tag at the end tells apart a second capture of the same version, e.g. one for a pair with its own crop
   const IMAGE_NAME =
-    /^fig(\d+)_(with|no)-attributes_(center|edge)-connection_(old|new)-algorithm$/;
+    /^fig(\d+)_(with|no)-attributes_(center|edge)-connection_(old|new)-algorithm(?:_[\w-]+)?$/;
 
   /** What a screenshot shows, read from its name; null if the name is off. */
   function parseImageName(name) {
@@ -1054,16 +1055,25 @@
       refresh();
     }
 
+    // a pair: a tap picks that one, a tap on the other switches, a tap on the pick takes it back
+    const pair = step.shown.length === 2;
+
     function rank(image) {
+      if (pair) {
+        const other = step.shown.find((x) => x !== image);
+        update({ ranking: answer.ranking[0] === image ? [] : [image, other], tie: false });
+        return;
+      }
       update({ ranking: SurveyCore.toggleRank(answer.tie ? [] : answer.ranking, image, step.shown), tie: false });
     }
 
     function refresh() {
       for (const c of cards) {
         const r = answer.ranking.indexOf(c.image);
-        c.card.classList.toggle("ranked", r >= 0);
-        c.card.setAttribute("aria-pressed", String(r >= 0));
-        c.pill.textContent = r >= 0 ? `${r + 1}º` : "";
+        const picked = pair ? r === 0 : r >= 0;
+        c.card.classList.toggle("ranked", picked);
+        c.card.setAttribute("aria-pressed", String(picked));
+        c.pill.textContent = pair ? (picked ? "✓ Este" : "") : r >= 0 ? `${r + 1}º` : "";
       }
       order.replaceChildren(...(answer.tie
         ? [h("span", {}, "Marcaste que no ves diferencia.")]
@@ -1081,15 +1091,16 @@
       if (viewer.open) renderViewer();
     }
 
-    const hint = step.shown.length === 2
-      ? "Toca el que elijas. Con 🔍 lo ves en grande."
-      : "Tócalos en orden, del mejor al peor. Con 🔍 los ves en grande.";
+    const hint = q.hint || (pair
+      ? "Toca el que prefieras. Con 🔍 los ves en grande."
+      : "Tócalos en orden, del mejor al peor. Con 🔍 los ves en grande.");
     show(
       h("section", { class: "page" },
         previewBar(step),
         h("header", { class: "q-head" }, progress(step), h("h2", {}, q.prompt), h("p", { class: "hint" }, hint)),
         grid,
-        h("div", { class: "q-foot" }, order, reset, tie, comment, backButton(), next)));
+        // a pair needs no order, reset or comment: just the pick and «Siguiente»
+        h("div", { class: pair ? "q-foot pair" : "q-foot" }, ...(pair ? [backButton(), next] : [order, reset, tie, comment, backButton(), next]))));
     screen = {
       step, answer, labels, rank, size, zoom, cardImage: 0,
       fit() {
@@ -1471,7 +1482,9 @@
     parts.zoom.textContent = view.zoomed ? "Ajustar" : "Acercar";
     parts.prev.textContent = `‹ ${labels[(view.index - 1 + n) % n]}`;
     parts.next.textContent = `${labels[(view.index + 1) % n]} ›`;
-    parts.choose.textContent = r >= 0 ? `Quitar del ${r + 1}º lugar` : `Elegir como ${answer.tie ? 1 : answer.ranking.length + 1}º`;
+    parts.choose.textContent = n === 2
+      ? (r === 0 ? "Quitar mi elección" : "Prefiero este")
+      : r >= 0 ? `Quitar del ${r + 1}º lugar` : `Elegir como ${answer.tie ? 1 : answer.ranking.length + 1}º`;
     viewer.classList.toggle("zoomed", view.zoomed);
     const widths = viewerWidths();
     parts.img.style.width = `${Math.round(view.zoomed ? widths.close : widths.fit)}px`;

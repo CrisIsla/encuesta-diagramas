@@ -1,0 +1,17 @@
+entity Empleado {
+    rut key
+}
+
+entity Departamento {
+    id key
+}
+
+entity Proyecto {
+    id key
+}
+
+relation Supervisa(Empleado: [Jefe 1, Subordinado N])
+
+relation Trabaja_en(Empleado N, Departamento 1!)
+
+relation Participa(Empleado M, Proyecto N)

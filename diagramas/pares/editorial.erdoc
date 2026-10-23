@@ -1,0 +1,36 @@
+entity Obra {
+    id key
+}
+
+entity Novela extends Obra {
+}
+
+entity Ensayo extends Obra {
+}
+
+entity Cómic extends Obra {
+}
+
+entity Autor {
+    id key
+}
+
+entity Editorial {
+    id key
+}
+
+entity Ilustrador {
+    id key
+}
+
+entity Revista {
+    id key
+}
+
+relation Escribe(Autor N, Obra M)
+
+relation Publica(Editorial 1, Obra N!)
+
+relation Ilustra(Ilustrador N, Obra M)
+
+relation Reseña(Revista N, Obra M)
